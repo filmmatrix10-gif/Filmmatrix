@@ -12,26 +12,29 @@ function App() {
   const [speed, setSpeed] = useState(1)
   const [feedbackCount, setFeedbackCount] = useState(0)
 
+  const getLiveStatus = async (): Promise<Record<string, unknown> | null> => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (!tab?.id) {
+      return null
+    }
+    try {
+      return await chrome.tabs.sendMessage(tab.id, { type: 'getStatus' })
+    } catch {
+      return null
+    }
+  }
+
   const refreshStats = async (): Promise<void> => {
     const result = await chrome.storage.local.get(['installed'])
     setStatus(result.installed ? 'Extension ready' : 'Not installed yet')
 
-    const snapshot = await getStorageSnapshot()
-    const latestSession = snapshot.sessions.at(-1)
-    if (latestSession) {
-      setSessionId(latestSession.sessionId)
-      setEventsCollected(latestSession.events.length)
-      const latestCompletion = latestSession.events
-        .filter((event) => event.type === 'completion' && typeof event.value === 'number')
-        .map((event) => event.value as number)
-        .at(-1)
-      setCompletion(latestCompletion ?? 0)
-      const latestSpeed = latestSession.events
-        .filter((event) => event.type === 'speed' && typeof event.value === 'number')
-        .map((event) => event.value as number)
-        .at(-1)
-      setSpeed(latestSpeed ?? 1)
-      setVideoDetected('Video active')
+    const live = await getLiveStatus()
+    if (live) {
+      setSessionId(typeof live.sessionId === 'string' ? live.sessionId : '')
+      setEventsCollected(typeof live.eventsCount === 'number' ? live.eventsCount : 0)
+      setCompletion(typeof live.completion === 'number' ? Math.max(live.completion, 0) : 0)
+      setSpeed(typeof live.speed === 'number' ? live.speed : 1)
+      setVideoDetected(live.hasVideo ? 'Video active' : 'No video detected')
     } else {
       setVideoDetected('No video detected')
       setSessionId('')

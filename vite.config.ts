@@ -5,4 +5,7 @@ import manifest from './manifest.ts'
 
 export default defineConfig({
   plugins: [react(), crx({ manifest })],
+  build: {
+    modulePreload: false,
+  },
 })
