@@ -38,6 +38,21 @@ export async function clearFeedback(): Promise<void> {
   await chrome.storage.local.remove(STORAGE_KEY)
 }
 
+export async function getFeedbackForSession(sessionId: string): Promise<FeedbackItem[]> {
+  const feedback = await loadFeedback()
+  return feedback.filter((entry) => entry.sessionId === sessionId)
+}
+
+export async function markFeedbackSynced(ids: string[]): Promise<void> {
+  if (ids.length === 0) {
+    return
+  }
+  const idSet = new Set(ids)
+  const feedback = await loadFeedback()
+  const next = feedback.map((entry) => (idSet.has(entry.id) ? { ...entry, synced: true } : entry))
+  await saveFeedback(next)
+}
+
 export async function exportFeedbackPayload(title: string, sessionId: string, feedback: FeedbackItem[]): Promise<{ movie: string; sessionId: string; feedback: FeedbackItem[] }> {
   return { movie: title, sessionId, feedback }
 }

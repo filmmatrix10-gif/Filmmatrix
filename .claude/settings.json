@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh auth *)",
+      "Read(//Users/shivanigupta/**)",
+      "Bash(ssh -T git@github.com)",
+      "Bash(mkdir -p ~/.ssh)",
+      "Bash(chmod 700 ~/.ssh)",
+      "Bash(ssh-keygen -t ed25519 -C \"shivani.gupta@athenaeducation.co.in\" -f ~/.ssh/id_ed25519_github -N \"\")",
+      "Read(//Users/shivanigupta/.ssh/**)",
+      "Bash(cat)",
+      "Bash(chmod 600 ~/.ssh/config)",
+      "Bash(ssh-keyscan -H github.com)",
+      "Bash(git remote *)",
+      "Bash(node -e \"console.log\\(require\\('./package.json'\\).devDependencies\\)\")",
+      "Bash(npx vite *)",
+      "Bash(npm install *)",
+      "Bash(npm test *)"
+    ]
+  }
+}

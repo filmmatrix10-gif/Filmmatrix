@@ -1,8 +1,8 @@
-import type { VideoEvent, VideoSession } from '../types/tracking'
+import type { Platform, VideoEvent, VideoSession } from '../types/tracking'
 import { createSessionId, getPageTitle } from '../utils/session'
 import { appendEvent, loadSessions } from '../utils/storage'
+import { detectPlatform } from '../utils/platform'
 
-const SUPPORTED_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2]
 const COMPLETION_STEP = 5
 
 export interface TrackerState {
@@ -10,9 +10,10 @@ export interface TrackerState {
   sessionStartedAt: number
   video: HTMLVideoElement | null
   hasVideo: boolean
-  lastCompletion: number
+  lastLoggedCompletion: number
   currentUrl: string
   title: string
+  platform?: Platform
   eventsCount: number
   lastKnownSpeed: number
   lastKnownVolume: number
@@ -31,9 +32,10 @@ export class VideoTracker {
       sessionStartedAt: Date.now(),
       video: null,
       hasVideo: false,
-      lastCompletion: -1,
+      lastLoggedCompletion: -1,
       currentUrl: window.location.href,
       title: getPageTitle(document),
+      platform: detectPlatform(window.location.href),
       eventsCount: 0,
       lastKnownSpeed: 1,
       lastKnownVolume: 1,
@@ -56,6 +58,20 @@ export class VideoTracker {
       window.clearInterval(this.intervalId)
       this.intervalId = null
     }
+    this.requestAutoSync()
+  }
+
+  /**
+   * Fire-and-forget: asks the background service worker to attempt a cloud
+   * sync now that the session has ended. Manual "Upload Session" in the
+   * popup remains the primary, reliable path — this is a best-effort extra.
+   */
+  private requestAutoSync(): void {
+    try {
+      chrome.runtime.sendMessage({ type: 'syncSession', sessionId: this.state.sessionId }).catch(() => {})
+    } catch {
+      // Extension context can be invalidated during page teardown; local data is unaffected.
+    }
   }
 
   public getState(): TrackerState {
@@ -66,7 +82,7 @@ export class VideoTracker {
     return {
       sessionId: this.state.sessionId,
       hasVideo: this.state.hasVideo,
-      completion: this.state.lastCompletion,
+      completion: this.getLiveCompletion(),
       speed: this.state.lastKnownSpeed,
       volume: this.state.lastKnownVolume,
       muted: this.state.lastKnownMuted,
@@ -74,6 +90,14 @@ export class VideoTracker {
       title: this.state.title,
       url: this.state.currentUrl,
     }
+  }
+
+  private getLiveCompletion(): number {
+    const video = this.state.video
+    if (!video || Number.isNaN(video.duration) || video.duration <= 0) {
+      return 0
+    }
+    return (video.currentTime / video.duration) * 100
   }
 
   private bindVideoDetection(): void {
@@ -96,6 +120,11 @@ export class VideoTracker {
         title: this.state.title,
         startedAt: this.state.sessionStartedAt,
         events: [],
+        platform: this.state.platform,
+        syncStatus: 'pending',
+        uploaded: false,
+        uploadedAt: null,
+        uploadedEventCount: 0,
       }
       await chrome.storage.local.set({ 'filmmetrics-sessions': [...existing, session] })
     }
@@ -208,9 +237,6 @@ export class VideoTracker {
       return
     }
     const value = video.playbackRate
-    if (!SUPPORTED_SPEEDS.includes(Number(value))) {
-      return
-    }
     this.state.lastKnownSpeed = value
     void this.logEvent({ type: 'speed', time: Date.now(), value })
     this.logPrefix('Speed', event)
@@ -251,9 +277,9 @@ export class VideoTracker {
         return
       }
       const completion = (video.currentTime / video.duration) * 100
-      const delta = completion - this.state.lastCompletion
+      const delta = completion - this.state.lastLoggedCompletion
       if (delta >= COMPLETION_STEP) {
-        this.state.lastCompletion = completion
+        this.state.lastLoggedCompletion = completion
         void this.logEvent({ type: 'completion', time: Date.now(), value: Number(completion.toFixed(1)) })
         this.logPrefix(`Completion ${completion.toFixed(1)}%`)
       }

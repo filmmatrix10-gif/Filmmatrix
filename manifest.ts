@@ -4,9 +4,14 @@ export default defineManifest({
   manifest_version: 3,
   name: 'FilmMetrics',
   version: '1.0.0',
-  description: 'A lightweight Chrome extension for YouTube viewing insights.',
+  description: 'A lightweight Chrome extension for YouTube and Google Drive viewing insights.',
   permissions: ['storage', 'tabs', 'activeTab'],
-  host_permissions: ['https://*.youtube.com/*', 'https://youtube.com/*'],
+  host_permissions: [
+    'https://*.youtube.com/*',
+    'https://youtube.com/*',
+    'https://drive.google.com/*',
+    'https://*.supabase.co/*',
+  ],
   action: {
     default_popup: 'index.html',
   },
@@ -16,7 +21,11 @@ export default defineManifest({
   },
   content_scripts: [
     {
-      matches: ['https://*.youtube.com/*', 'https://youtube.com/*'],
+      matches: [
+        'https://*.youtube.com/*',
+        'https://youtube.com/*',
+        'https://drive.google.com/*',
+      ],
       js: ['src/content.ts'],
     },
   ],

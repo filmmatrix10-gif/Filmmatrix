@@ -8,6 +8,8 @@ export interface FeedbackItem {
   sessionId?: string
   url?: string
   title?: string
+  /** Set once this item has been uploaded to Supabase; absent/false otherwise. */
+  synced?: boolean
 }
 
 export interface FeedbackState {

@@ -25,6 +25,48 @@
   margin-top: 10px;
 }
 
+.cloud-sync {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cloud-sync h2 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: #8ec5ff;
+}
+
+.cloud-sync p {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.cloud-sync button {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.cloud-sync button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sync-detail {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.sync-error {
+  color: #fca5a5;
+}
+
+.sync-note {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .popup-actions button,
 .ghost-btn,
 .primary-btn,
